@@ -16,6 +16,8 @@ import { UserSchema } from "./models/Users.schema";
 import { SessionSchema } from "./models/Sessions.schema";
 import { UtknSchema } from "./models/Utkns.schema";
 import { TestTask } from "./schedulers/test.task";
+import { FactorGeneratorTask } from "./schedulers/factorGenerator.task";
+import { BillSchema } from "./models/Bills.schema";
 
 @Module({
     imports: [
@@ -30,6 +32,7 @@ import { TestTask } from "./schedulers/test.task";
             { name: "Order", schema: OrderSchema },
             { name: "PlanLimitation", schema: PlanLimitationSchema },
             { name: "Plan", schema: PlanSchema },
+            { name: "Bill", schema: BillSchema },
             { name: "QrCode", schema: QrCodeSchema },
             { name: "Transaction", schema: TransactionSchema },
             { name: "User", schema: UserSchema },
@@ -42,6 +45,7 @@ import { TestTask } from "./schedulers/test.task";
         // ...
         AppService,
         // Tasks...
+        FactorGeneratorTask,
         // TestTask
     ],
 })
