@@ -4,7 +4,7 @@ import { FilterQuery, Model, Types } from "mongoose";
 import { Cron, CronExpression, SchedulerRegistry } from "@nestjs/schedule";
 import { UserDocument } from "src/models/Users.schema";
 import { BrandsPlan, BrandsPlanDocument } from "src/models/BrandsPlans.schema";
-import { PlanDocument } from "src/models/Plans.schema";
+import { Plan, PlanDocument } from "src/models/Plans.schema";
 import { BillDocument } from "src/models/Bills.schema";
 import { TransactionDocument } from "src/models/Transactions.schema";
 import { BrandDocument } from "src/models/Brands.schema";
@@ -26,9 +26,8 @@ export class FactorGeneratorTask {
 
     @Cron(CronExpression.EVERY_4_HOURS, { name: "factorGenerator", timeZone: "Asia/Tehran" })
     async job(): Promise<string | void> {
-        // get all purchasable plans
         const purchasablePlans = await this.PlanModel.find({ name: { $ne: "پلن پایه" } })
-            .select("_id monthlyPrice yearlyPrice")
+            .select("_id name monthlyPrice yearlyPrice translation")
             .exec();
         const planIds = purchasablePlans.map((plan) => plan._id);
 
@@ -38,11 +37,8 @@ export class FactorGeneratorTask {
         do {
             const brandPlansRows = await this._getPlansRows(lastRecordID, planIds);
             lastRecordID = brandPlansRows.lastRecordID;
-
             for (const brandPlan of brandPlansRows.brandPlans) {
-                // TODO
-                // generate a bill for them
-                console.log({ brandPlan: brandPlan._id });
+                await this._generateBill(brandPlan, purchasablePlans);
             }
         } while (grabbedRows >= this.rowPerOps);
     }
@@ -61,19 +57,64 @@ export class FactorGeneratorTask {
             let: { brandId: "$brand" },
             pipeline: [
                 // ...
-                { $match: { $expr: { $eq: ["$_id", "$$brandId"] }, type: "renewal", status: { $ne: "paid" } } },
-                { $sort: { createdAt: -1 } },
+                { $match: { $expr: { $eq: ["$brand", "$$brandId"] }, type: "renewal", status: { $ne: "paid" } } },
                 { $limit: 1 },
             ],
             as: "unpaidRenewalBill",
         });
         agg.match({ unpaidRenewalBill: { $eq: [] } });
-        agg.project({ _id: 1, currentPlan: 1, period: 1, startTime: 1, nextInvoice: 1, createdAt: 1 });
+        agg.project({ _id: 1, currentPlan: 1, brand: 1, period: 1, startTime: 1, nextInvoice: 1, createdAt: 1 });
         agg.limit(this.rowPerOps);
 
         let result: BrandsPlan[] | void = await agg.exec().catch((e) => console.log({ e }));
         if (!result) result = [];
 
         return { lastRecordID: "", brandPlans: result };
+    }
+
+    private async _generateBill(brandPlan: BrandsPlan, purchasablePlans: Plan[]) {
+        let plan_fa = "";
+        let plan_en = "";
+        let payablePrice = 0;
+        for (const plan of purchasablePlans) {
+            if (plan._id.equals(brandPlan.currentPlan._id)) {
+                plan_fa = plan.translation?.["fa"]?.name || plan.name;
+                plan_en = plan.translation?.["en"]?.name || plan.name;
+                payablePrice = plan[`${brandPlan.period}Price`] || 200_000;
+            }
+        }
+
+        const description_fa = `تمدید اشتراک ${plan_fa}`;
+        const description_en = `Plan renewal of ${plan_en}`;
+        const devider = brandPlan.period === "monthly" ? 30 : 365;
+
+        await this.BillModel.create({
+            billNumber: await this._generateBillNumber(),
+            type: "renewal",
+            description: description_fa,
+            // creator: req.session.userID,
+            brand: brandPlan.brand,
+            plan: brandPlan.currentPlan,
+            planPeriod: brandPlan.period,
+            payablePrice: payablePrice,
+            status: "pendingPayment",
+            secondsAddedToInvoice: devider * 24 * 60 * 60,
+            createdAt: new Date(Date.now()),
+            translation: { en: { description: description_en }, fa: { description: description_fa } },
+        }).catch((e) => {
+            console.log({ e });
+        });
+    }
+
+    private async _generateBillNumber(): Promise<number> {
+        let billNumberExists: boolean = true;
+        let billNumber: number = 0;
+
+        while (billNumberExists) {
+            billNumber = Math.floor(100000000 + Math.random() * 900000000);
+            billNumberExists = (await this.BillModel.exists({ billNumber: billNumber }).exec()) ? true : false;
+        }
+
+        return billNumber;
     }
 }
