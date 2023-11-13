@@ -16,7 +16,7 @@ import { UserSchema } from "./models/Users.schema";
 import { SessionSchema } from "./models/Sessions.schema";
 import { UtknSchema } from "./models/Utkns.schema";
 import { TestTask } from "./schedulers/test.task";
-import { FactorGeneratorTask } from "./schedulers/factorGenerator.task";
+import { BillGeneratorTask } from "./schedulers/billGenerator.task";
 import { BillSchema } from "./models/Bills.schema";
 
 @Module({
@@ -45,7 +45,7 @@ import { BillSchema } from "./models/Bills.schema";
         // ...
         AppService,
         // Tasks...
-        FactorGeneratorTask,
+        BillGeneratorTask,
         // TestTask
     ],
 })

@@ -10,7 +10,7 @@ import { TransactionDocument } from "src/models/Transactions.schema";
 import { BrandDocument } from "src/models/Brands.schema";
 
 @Injectable()
-export class FactorGeneratorTask {
+export class BillGeneratorTask {
     constructor(
         // ...
         private schedulerRegistry: SchedulerRegistry,
@@ -24,7 +24,7 @@ export class FactorGeneratorTask {
     private rowPerOps = 1000;
     private timeLimitForBillGeneration = 60 * 60 * 24 * 7; // 7 days OR 1 week -> in seconds
 
-    @Cron(CronExpression.EVERY_4_HOURS, { name: "factorGenerator", timeZone: "Asia/Tehran" })
+    @Cron(CronExpression.EVERY_6_HOURS, { name: "billGenerator", timeZone: "Asia/Tehran" })
     async job(): Promise<string | void> {
         const purchasablePlans = await this.PlanModel.find({ name: { $ne: "پلن پایه" } })
             .select("_id name monthlyPrice yearlyPrice translation")
@@ -39,6 +39,8 @@ export class FactorGeneratorTask {
             lastRecordID = brandPlansRows.lastRecordID;
             for (const brandPlan of brandPlansRows.brandPlans) {
                 await this._generateBill(brandPlan, purchasablePlans);
+                // TODO
+                // send a notif for user about the new bill
             }
         } while (grabbedRows >= this.rowPerOps);
     }
@@ -56,8 +58,13 @@ export class FactorGeneratorTask {
             from: "bills",
             let: { brandId: "$brand" },
             pipeline: [
-                // ...
-                { $match: { $expr: { $eq: ["$brand", "$$brandId"] }, type: "renewal", status: { $ne: "paid" } } },
+                {
+                    $match: {
+                        $expr: { $eq: ["$brand", "$$brandId"] },
+                        type: "renewal",
+                        $or: [{ status: { $ne: "paid" } }, { status: { $ne: "canceled" } }],
+                    },
+                },
                 { $limit: 1 },
             ],
             as: "unpaidRenewalBill",
@@ -97,7 +104,7 @@ export class FactorGeneratorTask {
             plan: brandPlan.currentPlan,
             planPeriod: brandPlan.period,
             payablePrice: payablePrice,
-            status: "pendingPayment",
+            status: "notPaid",
             secondsAddedToInvoice: devider * 24 * 60 * 60,
             createdAt: new Date(Date.now()),
             translation: { en: { description: description_en }, fa: { description: description_fa } },
