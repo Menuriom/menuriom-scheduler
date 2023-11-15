@@ -22,7 +22,7 @@ export class BillGeneratorTask {
     ) {}
 
     private rowPerOps = 1000;
-    private timeLimitForBillGeneration = 60 * 60 * 24 * 7; // 7 days OR 1 week -> in seconds
+    private timeLimitForBillGeneration = 60 * 60 * 24 * 4; // 4 days -> in seconds
 
     @Cron(CronExpression.EVERY_6_HOURS, { name: "billGenerator", timeZone: "Asia/Tehran" })
     async job(): Promise<string | void> {
