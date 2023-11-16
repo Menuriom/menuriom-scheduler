@@ -24,7 +24,8 @@ export class BillGeneratorTask {
     private rowPerOps = 1000;
     private timeLimitForBillGeneration = 60 * 60 * 24 * 4; // 4 days -> in seconds
 
-    @Cron(CronExpression.EVERY_6_HOURS, { name: "billGenerator", timeZone: "Asia/Tehran" })
+    // @Cron(CronExpression.EVERY_6_HOURS, { name: "billGenerator", timeZone: "Asia/Tehran" })
+    @Cron(CronExpression.EVERY_10_SECONDS, { name: "billGenerator", timeZone: "Asia/Tehran" })
     async job(): Promise<string | void> {
         const purchasablePlans = await this.PlanModel.find({ name: { $ne: "پلن پایه" } })
             .select("_id name monthlyPrice yearlyPrice translation")
@@ -37,6 +38,7 @@ export class BillGeneratorTask {
         do {
             const brandPlansRows = await this._getPlansRows(lastRecordID, planIds);
             lastRecordID = brandPlansRows.lastRecordID;
+
             for (const brandPlan of brandPlansRows.brandPlans) {
                 await this._generateBill(brandPlan, purchasablePlans);
                 // TODO
@@ -48,7 +50,7 @@ export class BillGeneratorTask {
     private async _getPlansRows(lastRecordID: string, planIds: string[]): Promise<{ lastRecordID: string; brandPlans: BrandsPlan[] }> {
         let matchQuery: FilterQuery<any> = {
             currentPlan: { $in: planIds },
-            nextInvoice: { $lte: new Date(new Date().getTime() + this.timeLimitForBillGeneration * 1000) },
+            nextInvoice: { $lte: new Date(Date.now() + this.timeLimitForBillGeneration * 1000) },
         };
         if (lastRecordID) matchQuery = { _id: { $lt: new Types.ObjectId(lastRecordID) }, ...matchQuery };
 
@@ -62,7 +64,7 @@ export class BillGeneratorTask {
                     $match: {
                         $expr: { $eq: ["$brand", "$$brandId"] },
                         type: "renewal",
-                        $or: [{ status: { $ne: "paid" } }, { status: { $ne: "canceled" } }],
+                        $and: [{ status: { $ne: "paid" } }, { status: { $ne: "canceled" } }],
                     },
                 },
                 { $limit: 1 },
@@ -70,7 +72,7 @@ export class BillGeneratorTask {
             as: "unpaidRenewalBill",
         });
         agg.match({ unpaidRenewalBill: { $eq: [] } });
-        agg.project({ _id: 1, currentPlan: 1, brand: 1, period: 1, startTime: 1, nextInvoice: 1, createdAt: 1 });
+        agg.project({ _id: 1, currentPlan: 1, brand: 1, period: 1, startTime: 1, nextInvoice: 1, createdAt: 1, unpaidRenewalBill: 1 });
         agg.limit(this.rowPerOps);
 
         let result: BrandsPlan[] | void = await agg.exec().catch((e) => console.log({ e }));
