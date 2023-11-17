@@ -24,8 +24,7 @@ export class BillGeneratorTask {
     private rowPerOps = 1000;
     private timeLimitForBillGeneration = 60 * 60 * 24 * 4; // 4 days -> in seconds
 
-    // @Cron(CronExpression.EVERY_6_HOURS, { name: "billGenerator", timeZone: "Asia/Tehran" })
-    @Cron(CronExpression.EVERY_10_SECONDS, { name: "billGenerator", timeZone: "Asia/Tehran" })
+    @Cron(CronExpression.EVERY_6_HOURS, { name: "billGenerator", timeZone: "Asia/Tehran" })
     async job(): Promise<string | void> {
         const purchasablePlans = await this.PlanModel.find({ name: { $ne: "پلن پایه" } })
             .select("_id name monthlyPrice yearlyPrice translation")
