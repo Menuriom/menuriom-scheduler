@@ -18,6 +18,7 @@ import { UtknSchema } from "./models/Utkns.schema";
 import { TestTask } from "./schedulers/test.task";
 import { BillGeneratorTask } from "./schedulers/billGenerator.task";
 import { BillSchema } from "./models/Bills.schema";
+import { AnalyticsCleanupTask } from "./schedulers/analyticsCleanup.task";
 
 @Module({
     imports: [
@@ -46,6 +47,7 @@ import { BillSchema } from "./models/Bills.schema";
         AppService,
         // Tasks...
         BillGeneratorTask,
+        AnalyticsCleanupTask,
         // TestTask
     ],
 })
