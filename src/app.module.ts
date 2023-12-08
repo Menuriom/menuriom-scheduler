@@ -19,6 +19,8 @@ import { TestTask } from "./schedulers/test.task";
 import { BillGeneratorTask } from "./schedulers/billGenerator.task";
 import { BillSchema } from "./models/Bills.schema";
 import { AnalyticsCleanupTask } from "./schedulers/analyticsCleanup.task";
+import { SessionsCleanupTask } from "./schedulers/sessionsCleanup.task";
+import { BillCancelationTask } from "./schedulers/billCancelation.task";
 
 @Module({
     imports: [
@@ -48,6 +50,8 @@ import { AnalyticsCleanupTask } from "./schedulers/analyticsCleanup.task";
         // Tasks...
         BillGeneratorTask,
         AnalyticsCleanupTask,
+        SessionsCleanupTask,
+        BillCancelationTask,
         // TestTask
     ],
 })
