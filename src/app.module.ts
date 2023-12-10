@@ -21,6 +21,8 @@ import { BillSchema } from "./models/Bills.schema";
 import { AnalyticsCleanupTask } from "./schedulers/analyticsCleanup.task";
 import { SessionsCleanupTask } from "./schedulers/sessionsCleanup.task";
 import { BillCancelationTask } from "./schedulers/billCancelation.task";
+import { NotifsService } from "./services/notifs.service";
+import { NotificationSchema } from "./models/Notifications.schema";
 
 @Module({
     imports: [
@@ -41,12 +43,15 @@ import { BillCancelationTask } from "./schedulers/billCancelation.task";
             { name: "User", schema: UserSchema },
             { name: "Session", schema: SessionSchema },
             { name: "Utkn", schema: UtknSchema },
+            { name: "Notification", schema: NotificationSchema },
         ]),
     ],
     controllers: [AppController],
     providers: [
         // ...
         AppService,
+        NotifsService,
+
         // Tasks...
         BillGeneratorTask,
         AnalyticsCleanupTask,
