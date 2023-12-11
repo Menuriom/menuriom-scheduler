@@ -6,7 +6,7 @@ export type NotificationDocument = Notification & Document;
 
 export const NotificationSchema = new Schema({
     user: { type: Schema.Types.ObjectId, ref: "User" },
-    brand: { type: Schema.Types.ObjectId, ref: "Brand", required: true },
+    brand: { type: Schema.Types.ObjectId, ref: "Brand" },
 
     showInSys: { type: Boolean },
     viewedInSysAt: { type: Date },

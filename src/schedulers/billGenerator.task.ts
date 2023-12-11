@@ -113,7 +113,13 @@ export class BillGeneratorTask {
         });
 
         if (bill) {
-            await this.notifsService.notif({ brand: brandPlan.brand.toString(), type: "new-bill", data: { bill: bill.id }, sendAsEmail: true, showInSys: true });
+            await this.notifsService.notif({
+                brand: brandPlan.brand.toString(),
+                type: "new-bill",
+                data: { bill: bill.id, billNumber: bill.billNumber, type: bill.type },
+                sendAsEmail: true,
+                showInSys: true,
+            });
         }
     }
 
