@@ -3,7 +3,10 @@ import { Cron, CronExpression, SchedulerRegistry } from "@nestjs/schedule";
 
 @Injectable()
 export class BillReminderTask {
-    constructor(private schedulerRegistry: SchedulerRegistry) {}
+    constructor(
+        // ...
+        private schedulerRegistry: SchedulerRegistry,
+    ) {}
 
     @Cron(CronExpression.EVERY_MINUTE, { name: "billReminder", timeZone: "Asia/Tehran" })
     async job(): Promise<string | void> {

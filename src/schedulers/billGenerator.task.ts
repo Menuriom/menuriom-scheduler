@@ -119,6 +119,7 @@ export class BillGeneratorTask {
                 data: { bill: bill.id, billNumber: bill.billNumber, type: bill.type },
                 sendAsEmail: true,
                 showInSys: true,
+                lang: "fa",
             });
         }
     }

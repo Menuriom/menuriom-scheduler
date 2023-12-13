@@ -23,6 +23,8 @@ import { SessionsCleanupTask } from "./schedulers/sessionsCleanup.task";
 import { BillCancelationTask } from "./schedulers/billCancelation.task";
 import { NotifsService } from "./services/notifs.service";
 import { NotificationSchema } from "./models/Notifications.schema";
+import { NotifCleanupTask } from "./schedulers/notifCleanup.task";
+import { NotifSenderTask } from "./schedulers/notifSender.task";
 
 @Module({
     imports: [
@@ -57,6 +59,8 @@ import { NotificationSchema } from "./models/Notifications.schema";
         AnalyticsCleanupTask,
         SessionsCleanupTask,
         BillCancelationTask,
+        NotifCleanupTask,
+        NotifSenderTask,
         // TestTask
     ],
 })
