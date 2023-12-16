@@ -116,7 +116,7 @@ export class BillGeneratorTask {
             await this.notifsService.notif({
                 brand: brandPlan.brand.toString(),
                 type: "new-bill",
-                data: { bill: bill.id, billNumber: bill.billNumber, type: bill.type },
+                data: { billID: bill.id, billNumber: bill.billNumber.toString(), type: "renewal" },
                 sendAsEmail: true,
                 showInSys: true,
                 lang: "fa",
