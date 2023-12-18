@@ -7,13 +7,14 @@ import { BrandsPlan, BrandsPlanDocument } from "src/models/BrandsPlans.schema";
 import { Plan, PlanDocument } from "src/models/Plans.schema";
 import { BillDocument } from "src/models/Bills.schema";
 import { TransactionDocument } from "src/models/Transactions.schema";
-import { BrandDocument } from "src/models/Brands.schema";
+import { NotifsService } from "src/services/notifs.service";
 
 @Injectable()
 export class BillGeneratorTask {
     constructor(
         // ...
         private schedulerRegistry: SchedulerRegistry,
+        private readonly notifsService: NotifsService,
         @InjectModel("User") private readonly UserModel: Model<UserDocument>,
         @InjectModel("BrandsPlan") private readonly BrandsPlanModel: Model<BrandsPlanDocument>,
         @InjectModel("Plan") private readonly PlanModel: Model<PlanDocument>,
@@ -40,8 +41,6 @@ export class BillGeneratorTask {
 
             for (const brandPlan of brandPlansRows.brandPlans) {
                 await this._generateBill(brandPlan, purchasablePlans);
-                // TODO
-                // send a notif for user about the new bill
             }
         } while (grabbedRows >= this.rowPerOps);
     }
@@ -96,7 +95,7 @@ export class BillGeneratorTask {
         const description_en = `Plan renewal of ${plan_en}`;
         const devider = brandPlan.period === "monthly" ? 30 : 365;
 
-        await this.BillModel.create({
+        const bill = await this.BillModel.create({
             billNumber: await this._generateBillNumber(),
             type: "renewal",
             description: description_fa,
@@ -112,6 +111,17 @@ export class BillGeneratorTask {
         }).catch((e) => {
             console.log({ e });
         });
+
+        if (bill) {
+            await this.notifsService.notif({
+                brand: brandPlan.brand.toString(),
+                type: "new-bill",
+                data: { billID: bill.id, billNumber: bill.billNumber.toString(), type: "renewal" },
+                sendAsEmail: true,
+                showInSys: true,
+                lang: "fa",
+            });
+        }
     }
 
     private async _generateBillNumber(): Promise<number> {
